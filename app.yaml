@@ -1,0 +1,4 @@
+service: stage-backend
+runtime: nodejs20
+entrypoint: node index.js
+

@@ -1,0 +1,130 @@
+steps:
+  - name: "gcr.io/cloud-builders/npm"
+    args: ["install"]
+
+  # - name: "gcr.io/cloud-builders/git"
+  #   entrypoint: "bash"
+  #   args:
+  #     - "-c"
+  #     - |
+  #       echo "Extracting Git metadata..."
+        
+  #       # Confirming that we're in a Git repository
+  #       if [ ! -d .git ]; then
+  #         echo "Error: Not in a Git repository."
+  #         exit 1
+  #       fi
+
+  #       echo "Current directory contents:"
+  #       ls -la
+
+  #       # Displaying the current Git status
+  #       echo "Current Git status:"
+  #       git status
+        
+  #       # Attempting to retrieve the commit and branch details
+  #       echo "Retrieving Git commit..."
+  #       _GIT_COMMIT=$(git rev-parse HEAD)
+  #       echo "Retrieving Git branch..."
+  #       _GIT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+
+  #       # Checking if the commands succeeded
+  #       if [ $? -ne 0 ]; then
+  #         echo "Error: Unable to retrieve Git metadata."
+  #         exit 1
+  #       fi
+        
+  #       # Echo the retrieved commit and branch for debugging
+  #       echo "Debug: Commit is $_GIT_COMMIT"
+  #       echo "Debug: Branch is $_GIT_BRANCH"
+
+  #       # Outputting the retrieved values to the console
+  #       echo "_GIT_COMMIT=$_GIT_COMMIT" >> /workspace/.env
+  #       echo "_GIT_BRANCH=$_GIT_BRANCH" >> /workspace/.env
+        
+  #       # Echo the values directly to the logs
+  #       echo "Git commit: $_GIT_COMMIT"
+  #       echo "Git branch: $_GIT_BRANCH"
+        
+  #       echo "Git commit and branch saved to environment file."
+  - name: 'gcr.io/cloud-builders/git'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        echo "Branch: ${BRANCH_NAME}" > git-info.txt
+        echo "Commit: ${REVISION_ID}" >> git-info.txt
+
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    args:
+      - gcloud
+      - app
+      - deploy
+      - app.yaml
+      - '--promote'  # Use --promote flag here to promote the new version      
+
+  - name: "gcr.io/cloud-builders/npm"
+    args: ["run", "create-env"]
+    env:
+      - "_COMMIT_SHA=${REVISION_ID}"
+      - "_BRANCH_NAME=${BRANCH_NAME}"
+      - "_DB_URL=${_DB_URL}"
+      - "_JWT_SECRET_KEY=${_JWT_SECRET_KEY}"
+      - "_BUCKET_NAME=${_BUCKET_NAME}"
+      - "_KEYFILENAME=${_KEYFILENAME}"
+      - "_BASE64STRING=${_BASE64STRING}"
+      - "_GOOGLE_MAP_KEY=${_GOOGLE_MAP_KEY}"
+      - "_TYPE=${_TYPE}"
+      - "_PROJECT_ID=${_PROJECT_ID}"
+      - "_PRIVATE_KEY_ID=${_PRIVATE_KEY_ID}"
+      - "_PRIVATE_KEY=${_PRIVATE_KEY}"
+      - "_CLIENT_EMAIL=${_CLIENT_EMAIL}"
+      - "_CLIENT_ID=${_CLIENT_ID}"
+      - "_AUTH_URI=${_AUTH_URI}"
+      - "_TOKEN_URI=${_TOKEN_URI}"
+      - "_AUTH_PROVIDER_X509_CERT_URL=${_AUTH_PROVIDER_X509_CERT_URL}"
+      - "_CLIENT_X509_CERT_URL=${_CLIENT_X509_CERT_URL}"
+      - "_UNIVERSE_DOMAIN=${_UNIVERSE_DOMAIN}"
+      - "_DB_USER_NAME=${_DB_USER_NAME}"
+      - "_DB_PASSWORD=${_DB_PASSWORD}"
+      - "_DB_CLUSTER=${_DB_CLUSTER}"
+      - "_DB_APP_NAME=${_DB_APP_NAME}"
+      - "_AURORA_GRANT_TYPE=${_AURORA_GRANT_TYPE}"
+      - "_AURORA_CLIENT_ID=${_AURORA_CLIENT_ID}"
+      - "_AURORA_CLIENT_SECRET=${_AURORA_CLIENT_SECRET}"
+      - "_AURORA_SCOPE=${_AURORA_SCOPE}"
+
+  # - name: "gcr.io/cloud-builders/gcloud"
+  #   entrypoint: "bash"
+  #   args:
+  #     - "-c"
+  #     - |
+  #       versions=$(gcloud app versions list \
+  #         --service default \
+  #         --sort-by '~VERSION.ID' \
+  #         --format 'value(VERSION.ID)' | sed 1,5d)
+  #       for version in $versions; do
+  #         gcloud app versions delete "$version" \
+  #           --service default \
+  #           --quiet
+  #       done
+
+  # - name: "gcr.io/cloud-builders/gcloud"
+  #   entrypoint: "bash"
+  #   args:
+  #     - "-c"
+  #     - |
+  #       latest_version=$(gcloud app versions list --service default --sort-by '~VERSION.ID' --limit 1 --format 'value(VERSION.ID)')
+  #       if [ -n "$latest_version" ]; then
+  #         echo "$latest_version" > latest_version.txt
+  #         echo "Latest GAE Version written to file: $latest_version"
+  #         echo "_LATEST_VERSION=$latest_version" >> /workspace/.env  # Save to .env file
+  #         echo "Latest GAE version saved to environment file: $_LATEST_VERSION"  # Log the saved version
+  #       else
+  #         echo "No versions found." > latest_version.txt
+  #         echo "Error: No GAE versions found." >> /workspace/.env  # Optional: Log error in .env
+  #       fi
+
+options:
+  logging: CLOUD_LOGGING_ONLY
+
